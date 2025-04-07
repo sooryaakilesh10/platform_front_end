@@ -11,11 +11,29 @@ import TestInterface from './pages/TestInterface';
 import Calendar from './pages/Calendar';
 import Certificates from './pages/Certificates';
 import Settings from './pages/Settings';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminUsers from './pages/admin/Users';
+import Questions from './pages/admin/Questions';
+import TestCreator from './pages/admin/TestCreator';
+import CertificateVerification from './pages/admin/CertificateVerification';
+import CalendarNotifications from './pages/admin/CalendarNotifications';
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="questions" element={<Questions />} />
+          <Route path="test-creator" element={<TestCreator />} />
+          <Route path="certificate-verification" element={<CertificateVerification />} />
+          <Route path="calendar-notifications" element={<CalendarNotifications />} />
+        </Route>
+
+        {/* Student Routes */}
         <Route
           path="/lesson/*"
           element={<LessonView />}
