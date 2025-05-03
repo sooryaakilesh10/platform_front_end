@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    .tab {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .tab button {
+      padding: 10px 15px;
+      cursor: pointer;
+      border: none;
+      background-color: #ddd;
+    }
+    .tab button.active {
+      background-color: #4285f4;
+      color: white;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+      background: white;
+      padding: 20px;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    input, textarea, button, select {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    select[multiple] {
+      height: 150px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      table-layout: fixed;
+      word-wrap: break-word;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .status-message {
+        margin-top: 15px;
+        font-weight: bold;
+    }
+    .status-success {
+        color: green;
+    }
+    .status-error {
+        color: red;
+    }
+    #refreshCompaniesBtn, #refreshUsersBtn, #refreshApprovalsBtn {
+        width: auto;
+        padding: 8px 15px;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    .approve-btn {
+        width: auto;
+        padding: 5px 10px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+    .approve-btn:hover {
+        background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Admin Dashboard</h2>
+
+  <div class="tab">
+    <button class="tab-link active" onclick="showTab(event, 'createCompany')">Create Company</button>
+    <button class="tab-link" onclick="showTab(event, 'createUser')">Create User</button>
+    <button class="tab-link" onclick="showTab(event, 'listCompanies')">List Companies</button>
+    <button class="tab-link" onclick="showTab(event, 'listUsers')">List Users</button>
+    <button class="tab-link" onclick="showTab(event, 'listApprovals')">Approvals</button>
+    <button class="tab-link" onclick="showTab(event, 'mapUsers')">Map Users to Companies</button>
+  </div>
+
+  <!-- Create Company Tab -->
+  <div id="createCompany" class="tab-content active">
+    <h3>Create Company</h3>
+    <form id="companyForm">
+      <input type="text" id="companyName" placeholder="Company Name" required />
+      <input type="text" id="companyAddress" placeholder="Company Address" required />
+      <input type="text" id="drive" placeholder="Drive" required />
+      <input type="text" id="typeOfDrive" placeholder="Type of Drive" required />
+      <input type="text" id="followUp" placeholder="Follow Up" required />
+      <input type="text" id="contactDetails" placeholder="Contact Details" required />
+      <input type="text" id="hrDetails" placeholder="HR Details" required />
+      <textarea id="remarks" placeholder="Remarks" required></textarea>
+      <label>
+        <input type="checkbox" id="isContacted" /> Is Contacted?
+      </label>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="companyStatus" class="status-message"></div>
+  </div>
+
+  <!-- Create User Tab -->
+  <div id="createUser" class="tab-content">
+    <h3>Create User</h3>
+    <form id="userForm">
+      <input type="text" id="userName" placeholder="User Name" required />
+      <input type="email" id="userEmail" placeholder="Email" required />
+      <input type="password" id="userPass" placeholder="Password" required />
+      <select id="userRole" required>
+        <option value="">Select Role</option>
+        <option value="admin">Admin</option>
+        <option value="manager">Manager</option>
+        <option value="user">User</option>
+      </select>
+      <button type="submit">Create User</button>
+    </form>
+    <div id="userStatus" class="status-message"></div>
+  </div>
+
+  <!-- List Companies Tab -->
+  <div id="listCompanies" class="tab-content">
+    <h3>List Companies</h3>
+    <button id="refreshCompaniesBtn" onclick="fetchAndDisplayCompanies()">Refresh List</button>
+    <div id="listStatus" class="status-message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Address</th>
+          <th>Drive</th>
+          <th>Type</th>
+          <th>Follow Up</th>
+          <th>Contacted</th>
+          <th>Contact Details</th>
+          <th>HR Details</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody id="companyListBody"></tbody>
+    </table>
+  </div>
+
+  <!-- List Users Tab -->
+  <div id="listUsers" class="tab-content">
+    <h3>List Users</h3>
+    <button id="refreshUsersBtn" onclick="fetchAndDisplayUsers()">Refresh List</button>
+    <div id="userListStatus" class="status-message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>User ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody id="userListBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Approvals Tab -->
+  <div id="listApprovals" class="tab-content">
+    <h3>Pending Approvals</h3>
+    <button id="refreshApprovalsBtn" onclick="fetchAndDisplayApprovals()">Refresh List</button>
+    <div id="approvalStatus" class="status-message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Company ID</th>
+          <th>Name</th>
+          <th>Address</th>
+          <th>Drive</th>
+          <th>Type</th>
+          <th>Follow Up</th>
+          <th>Contacted</th>
+          <th>Contact Details</th>
+          <th>HR Details</th>
+          <th>Remarks</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="approvalListBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Map Users to Companies Tab -->
+  <div id="mapUsers" class="tab-content">
+    <h3>Map Users to Companies</h3>
+    <form id="mappingForm">
+      <select id="mappingUser" required>
+        <option value="">Select User</option>
+      </select>
+      <select id="mappingCompanies" multiple required>
+        <option value="">Select Companies</option>
+      </select>
+      <button type="submit">Create Mapping</button>
+    </form>
+    <div id="mappingStatus" class="status-message"></div>
+    <h3>Existing Mappings</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Company Name</th>
+          <th>User Name</th>
+        </tr>
+      </thead>
+      <tbody id="mappingListBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // --- Helper Function to Check Token ---
+    function checkToken() {
+        const jwt_token = localStorage.getItem("jwt_token");
+        if (!jwt_token) {
+            alert("Unauthorized: No token found. Please login again.");
+            window.location.href = "index.html";
+            return null;
+        }
+        return jwt_token;
+    }
+
+    // --- Function to Display Status Messages ---
+    function showStatus(elementId, message, isError = false) {
+        const statusEl = document.getElementById(elementId);
+        if (statusEl) {
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+        }
+    }
+
+    // --- Tab Switching Logic ---
+    function showTab(event, tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      if (event && event.target) {
+        event.target.classList.add('active');
+      } else {
+         const button = document.querySelector(`.tab-link[onclick*="'${tabId}'"]`);
+         if (button) button.classList.add('active');
+      }
+
+      if (tabId === 'listCompanies') {
+        fetchAndDisplayCompanies();
+      } else if (tabId === 'listUsers') {
+        fetchAndDisplayUsers();
+      } else if (tabId === 'listApprovals') {
+        fetchAndDisplayApprovals();
+      } else if (tabId === 'mapUsers') {
+        fetchAndPopulateMappingData();
+      }
+    }
+
+    // --- Fetch and Display Companies Logic ---
+    async function fetchAndDisplayCompanies() {
+        const token = checkToken();
+        if (!token) return;
+
+        const listStatus = document.getElementById("listStatus");
+        const tableBody = document.getElementById("companyListBody");
+        listStatus.textContent = "⏳ Loading companies...";
+        listStatus.className = 'status-message';
+        tableBody.innerHTML = '';
+
+        const apiEndpoint = "http://localhost:8080/v1/data";
+        const requestOptions = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            }
+        };
+
+        try {
+            const response = await fetch(apiEndpoint, requestOptions);
+            const responseText = await response.text();
+
+            if (!response.ok) {
+                let errorMessage = `Failed to fetch companies. Status: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.warn("Response was not OK, and the body was not valid JSON:", parseError);
+                }
+                if (response.status === 401 || response.status === 403) {
+                    errorMessage += " (Check if token is valid/expired)";
+                }
+                throw new Error(errorMessage);
+            }
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error("Received successful response, but failed to parse JSON body.");
+            }
+
+            if (!data || typeof data !== 'object' || !Array.isArray(data.companies)) {
+                throw new Error("Invalid data format received from server. Expected { companies: [...] }.");
+            }
+
+            if (data.companies.length === 0) {
+                listStatus.textContent = "ℹ️ No companies found.";
+                listStatus.className = 'status-message';
+                return;
+            }
+
+            data.companies.forEach(company => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = company.CompanyID ?? 'N/A';
+                row.insertCell().textContent = company.CompanyName ?? 'N/A';
+                row.insertCell().textContent = company.CompanyAddress ?? 'N/A';
+                row.insertCell().textContent = company.Drive ?? 'N/A';
+                row.insertCell().textContent = company.TypeOfDrive ?? 'N/A';
+                row.insertCell().textContent = company.FollowUp ?? 'N/A';
+                row.insertCell().textContent = typeof company.IsContacted === 'boolean' ? (company.IsContacted ? 'Yes' : 'No') : 'N/A';
+                row.insertCell().textContent = company.ContactDetails ?? 'N/A';
+                row.insertCell().textContent = company.HRDetails ?? 'N/A';
+                row.insertCell().textContent = company.Remarks ?? 'N/A';
+            });
+
+            listStatus.textContent = `✅ Loaded ${data.companies.length} companies.`;
+            listStatus.className = 'status-message status-success';
+
+        } catch (error) {
+            console.error("Error in fetchAndDisplayCompanies:", error);
+            showStatus("listStatus", `❌ Error: ${error.message}`, true);
+        }
+    }
+
+    // --- Fetch and Display Users Logic ---
+    async function fetchAndDisplayUsers() {
+        const token = checkToken();
+        if (!token) return;
+
+        const listStatus = document.getElementById("userListStatus");
+        const tableBody = document.getElementById("userListBody");
+        listStatus.textContent = "⏳ Loading users...";
+        listStatus.className = 'status-message';
+        tableBody.innerHTML = '';
+
+        const apiEndpoint = "http://localhost:8080/v1/user/list";
+        const requestOptions = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            }
+        };
+
+        try {
+            const response = await fetch(apiEndpoint, requestOptions);
+            const responseText = await response.text();
+
+            if (!response.ok) {
+                let errorMessage = `Failed to fetch users. Status: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.warn("Response was not OK, and the body was not valid JSON:", parseError);
+                }
+                if (response.status === 401 || response.status === 403) {
+                    errorMessage += " (Check if token is valid/expired)";
+                }
+                throw new Error(errorMessage);
+            }
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error("Received successful response, but failed to parse JSON body.");
+            }
+
+            if (!data || typeof data !== 'object' || !Array.isArray(data.users)) {
+                throw new Error("Invalid data format received from server. Expected { users: [...] }.");
+            }
+
+            if (data.users.length === 0) {
+                listStatus.textContent = "ℹ️ No users found.";
+                listStatus.className = 'status-message';
+                return;
+            }
+
+            data.users.forEach(user => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = user.UserID ?? 'N/A';
+                row.insertCell().textContent = user.UserName ?? 'N/A';
+                row.insertCell().textContent = user.Email ?? 'N/A';
+                row.insertCell().textContent = user.Role ?? 'N/A';
+                row.insertCell().textContent = user.CreatedAt ? new Date(user.CreatedAt).toLocaleString() : 'N/A';
+            });
+
+            listStatus.textContent = `✅ Loaded ${data.users.length} users.`;
+            listStatus.className = 'status-message status-success';
+
+        } catch (error) {
+            console.error("Error in fetchAndDisplayUsers:", error);
+            showStatus("userListStatus", `❌ Error: ${error.message}`, true);
+        }
+    }
+
+    // --- Approve Company Logic ---
+    async function approveCompany(companyId) {
+        const token = checkToken();
+        if (!token) return;
+
+        const apiEndpoint = `http://localhost:8080/v1/data/approve/id/${companyId}`;
+        const payload = {
+            jwt_token: token,
+            id: companyId,
+            isApproved: true
+        };
+        const requestOptions = {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        };
+
+        try {
+            const response = await fetch(apiEndpoint, requestOptions);
+            const responseText = await response.text();
+
+            if (!response.ok) {
+                let errorMessage = `Failed to approve company. Status: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.warn("Response was not OK, and the body was not valid JSON:", parseError);
+                }
+                if (response.status === 401 || response.status === 403) {
+                    errorMessage += " (Check if token is valid/expired)";
+                }
+                throw new Error(errorMessage);
+            }
+
+            showStatus("approvalStatus", `✅ Company ${companyId} approved successfully!`);
+            fetchAndDisplayApprovals();
+
+        } catch (error) {
+            console.error("Error in approveCompany:", error);
+            showStatus("approvalStatus", `❌ Error: ${error.message}`, true);
+        }
+    }
+
+    // --- Fetch and Display Approvals Logic ---
+    async function fetchAndDisplayApprovals() {
+        const token = checkToken();
+        if (!token) return;
+
+        const listStatus = document.getElementById("approvalStatus");
+        const tableBody = document.getElementById("approvalListBody");
+        listStatus.textContent = "⏳ Loading pending approvals...";
+        listStatus.className = 'status-message';
+        tableBody.innerHTML = '';
+
+        const apiEndpoint = "http://localhost:8080/v1/data/approve";
+        const payload = { jwt_token: token };
+        const requestOptions = {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        };
+
+        try {
+            const response = await fetch(apiEndpoint, requestOptions);
+            const responseText = await response.text();
+
+            if (!response.ok) {
+                let errorMessage = `Failed to fetch approvals. Status: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.warn("Response was not OK, and the body was not valid JSON:", parseError);
+                }
+                if (response.status === 401 || response.status === 403) {
+                    errorMessage += " (Check if token is valid/expired)";
+                }
+                throw new Error(errorMessage);
+            }
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error("Received successful response, but failed to parse JSON body.");
+            }
+
+            if (!data || typeof data !== 'object') {
+                throw new Error("Invalid data format received from server. Expected an object.");
+            }
+
+            const companies = Array.isArray(data.companies) ? data.companies : [];
+            const count = data.count !== undefined ? Number(data.count) : companies.length;
+
+            if (count === 0) {
+                listStatus.textContent = "empty";
+                listStatus.className = 'status-message';
+                return;
+            }
+
+            companies.forEach(company => {
+                const row = tableBody.insertRow();
+                row.insertCell().textContent = company.CompanyID ?? 'N/A';
+                row.insertCell().textContent = company.CompanyName ?? 'N/A';
+                row.insertCell().textContent = company.CompanyAddress ?? 'N/A';
+                row.insertCell().textContent = company.Drive ?? 'N/A';
+                row.insertCell().textContent = company.TypeOfDrive ?? 'N/A';
+                row.insertCell().textContent = company.FollowUp ?? 'N/A';
+                row.insertCell().textContent = typeof company.IsContacted === 'boolean' ? (company.IsContacted ? 'Yes' : 'No') : 'N/A';
+                row.insertCell().textContent = company.ContactDetails ?? 'N/A';
+                row.insertCell().textContent = company.HRDetails ?? 'N/A';
+                row.insertCell().textContent = company.Remarks ?? 'N/A';
+                const actionCell = row.insertCell();
+                const approveButton = document.createElement('button');
+                approveButton.textContent = 'Approve';
+                approveButton.className = 'approve-btn';
+                approveButton.onclick = () => approveCompany(company.CompanyID);
+                actionCell.appendChild(approveButton);
+            });
+
+            listStatus.textContent = `✅ Loaded ${count} pending approvals.`;
+            listStatus.className = 'status-message status-success';
+
+        } catch (error) {
+            console.error("Error in fetchAndDisplayApprovals:", error);
+            showStatus("approvalStatus", `❌ Error: ${error.message}`, true);
+        }
+    }
+
+    // --- Fetch and Populate Mapping Data ---
+    async function fetchAndPopulateMappingData() {
+        const token = checkToken();
+        if (!token) return;
+
+        const userSelect = document.getElementById("mappingUser");
+        const companySelect = document.getElementById("mappingCompanies");
+        const mappingStatus = document.getElementById("mappingStatus");
+
+        mappingStatus.textContent = "⏳ Loading users, companies, and mappings...";
+        mappingStatus.className = 'status-message';
+
+        userSelect.innerHTML = '<option value="">Select User</option>';
+        companySelect.innerHTML = '<option value="">Select Companies</option>';
+
+        try {
+            // Fetch users
+            const userResponse = await fetch("http://localhost:8080/v1/user/list", {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            const userText = await userResponse.text();
+
+            if (!userResponse.ok) {
+                let errorMessage = `Failed to fetch users. Status: ${userResponse.status}`;
+                try {
+                    const errorData = JSON.parse(userText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.warn("User response was not OK, and the body was not valid JSON:", parseError);
+                }
+                throw new Error(errorMessage);
+            }
+
+            let userData;
+            try {
+                userData = JSON.parse(userText);
+            } catch (parseError) {
+                throw new Error("Failed to parse user response as JSON.");
+            }
+
+            if (!userData || !Array.isArray(userData.users)) {
+                throw new Error("Invalid user data format. Expected { users: [...] }.");
+            }
+
+            // Fetch companies
+            const companyResponse = await fetch("http://localhost:8080/v1/data", {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            const companyText = await companyResponse.text();
+
+            if (!companyResponse.ok) {
+                let errorMessage = `Failed to fetch companies. Status: ${companyResponse.status}`;
+                try {
+                    const errorData = JSON.parse(companyText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.warn("Company response was not OK, and the body was not valid JSON:", parseError);
+                }
+                throw new Error(errorMessage);
+            }
+
+            let companyData;
+            try {
+                companyData = JSON.parse(companyText);
+            } catch (parseError) {
+                throw new Error("Failed to parse company response as JSON.");
+            }
+
+            if (!companyData || !Array.isArray(companyData.companies)) {
+                throw new Error("Invalid company data format. Expected { companies: [...] }.");
+            }
+
+            // Populate user dropdown
+            if (userData.users.length === 0) {
+                userSelect.innerHTML = '<option value="">No users available</option>';
+            } else {
+                userData.users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.UserID;
+                    option.textContent = `${user.UserName} (${user.Email})`;
+                    userSelect.appendChild(option);
+                });
+            }
+
+            // Populate company dropdown
+            if (companyData.companies.length === 0) {
+                companySelect.innerHTML = '<option value="">No companies available</option>';
+            } else {
+                companyData.companies.forEach(company => {
+                    const option = document.createElement('option');
+                    option.value = company.CompanyID;
+                    option.textContent = company.CompanyName;
+                    companySelect.appendChild(option);
+                });
+            }
+
+            // Fetch and display mappings
+            await fetchAndDisplayMappings(userData.users, companyData.companies);
+
+            mappingStatus.textContent = "✅ Loaded users, companies, and mappings.";
+            mappingStatus.className = 'status-message status-success';
+
+        } catch (error) {
+            console.error("Error in fetchAndPopulateMappingData:", error);
+            showStatus("mappingStatus", `❌ Error: ${error.message}`, true);
+        }
+    }
+
+    // --- Fetch and Display Mappings ---
+    async function fetchAndDisplayMappings(users = [], companies = []) {
+        const token = checkToken();
+        if (!token) return;
+
+        const tableBody = document.getElementById("mappingListBody");
+        tableBody.innerHTML = '';
+
+        try {
+            const response = await fetch("http://localhost:8080/v1/data/mapping/list", {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            const responseText = await response.text();
+
+            if (!response.ok) {
+                let errorMessage = `Failed to fetch mappings. Status: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.warn("Response was not OK, and the body was not valid JSON:", parseError);
+                }
+                throw new Error(errorMessage);
+            }
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error("Failed to parse mappings response as JSON.");
+            }
+
+            if (!data || !Array.isArray(data.mapping)) {
+                throw new Error("Invalid mappings data format. Expected { mapping: [...] }.");
+            }
+
+            if (data.mapping.length === 0) {
+                const row = tableBody.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 2;
+                cell.textContent = "No mappings found.";
+                return;
+            }
+
+            // Create lookup maps for users and companies
+            const userMap = users.reduce((map, user) => {
+                map[user.UserID] = user.UserName;
+                return map;
+            }, {});
+            const companyMap = companies.reduce((map, company) => {
+                map[company.CompanyID] = company.CompanyName;
+                return map;
+            }, {});
+
+            // Populate mappings table
+            data.mapping.forEach(mapping => {
+                const row = tableBody.insertRow();
+                const companyName = companyMap[mapping.CompanyID] || mapping.CompanyID || 'N/A';
+                const userName = userMap[mapping.AccountID] || mapping.AccountID || 'N/A';
+                row.insertCell().textContent = companyName;
+                row.insertCell().textContent = userName;
+            });
+
+        } catch (error) {
+            console.error("Error in fetchAndDisplayMappings:", error);
+            showStatus("mappingStatus", `❌ Error: ${error.message}`, true);
+        }
+    }
+
+    // --- Create User-Company Mapping ---
+    async function createUserCompanyMapping(e) {
+        e.preventDefault();
+        const token = checkToken();
+        if (!token) return;
+
+        const userId = document.getElementById("mappingUser").value;
+        const companySelect = document.getElementById("mappingCompanies");
+        const companyIds = Array.from(companySelect.selectedOptions).map(option => option.value);
+
+        if (!userId || companyIds.length === 0) {
+            showStatus("mappingStatus", "❌ Please select a user and at least one company.", true);
+            return;
+        }
+
+        const payload = {
+            jwt_token: token,
+            companyID: companyIds,
+            accountID: userId
+        };
+
+        try {
+            const response = await fetch("http://localhost:8080/v1/data/mapping", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            const responseText = await response.text();
+
+            if (!response.ok) {
+                let errorMessage = `Failed to create mapping. Status: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = JSON.parse(responseText);
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (parseError) {
+                    console.warn("Response was not OK, and the body was not valid JSON:", parseError);
+                }
+                throw new Error(errorMessage);
+            }
+
+            showStatus("mappingStatus", "✅ Mapping created successfully!");
+            document.getElementById("mappingForm").reset();
+
+            // Fetch users and companies again to ensure we have the latest data for mapping display
+            const userResponse = await fetch("http://localhost:8080/v1/user/list", {
+                method: "GET",
+                headers: { "Accept": "application/json", "Authorization": `Bearer ${token}` }
+            });
+            const userData = await userResponse.json();
+            const companyResponse = await fetch("http://localhost:8080/v1/data", {
+                method: "GET",
+                headers: { "Accept": "application/json", "Authorization": `Bearer ${token}` }
+            });
+            const companyData = await companyResponse.json();
+
+            // Refresh mappings table
+            await fetchAndDisplayMappings(userData.users || [], companyData.companies || []);
+
+        } catch (error) {
+            console.error("Error in createUserCompanyMapping:", error);
+            showStatus("mappingStatus", `❌ Error: ${error.message}`, true);
+        }
+    }
+
+    // --- Form Submission Logic (Create Company) ---
+    document.getElementById("companyForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const token = checkToken();
+      if (!token) return;
+
+      const payload = {
+        jwt_token: token,
+        companyName: document.getElementById("companyName").value,
+        companyAddress: document.getElementById("companyAddress").value,
+        drive: document.getElementById("drive").value,
+        typeOfDrive: document.getElementById("typeOfDrive").value,
+        followUp: document.getElementById("followUp").value,
+        isContacted: document.getElementById("isContacted").checked,
+        remarks: document.getElementById("remarks").value,
+        contactDetails: document.getElementById("contactDetails").value,
+        hrDetails: document.getElementById("hrDetails").value
+      };
+
+      try {
+        const response = await fetch("http://localhost:8080/v1/data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+
+        if (!response.ok) {
+            let errorMessage = `HTTP error! status: ${response.status}`;
+            try {
+                const errorData = JSON.parse(responseText);
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = `HTTP error! status: ${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        showStatus("companyStatus", "✅ Company created successfully!");
+        document.getElementById("companyForm").reset();
+      } catch (error) {
+        showStatus("companyStatus", `❌ ${error.message}`, true);
+      }
+    });
+
+    // --- Form Submission Logic (Create User) ---
+    document.getElementById("userForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const token = checkToken();
+      if (!token) return;
+
+      const payload = {
+        jwt_token: token,
+        user_name: document.getElementById("userName").value,
+        email: document.getElementById("userEmail").value,
+        pass: document.getElementById("userPass").value,
+        role: document.getElementById("userRole").value
+      };
+
+      try {
+        const response = await fetch("http://localhost:8080/v1/user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const responseText = await response.text();
+
+        if (!response.ok) {
+            let errorMessage = `HTTP error! status: ${response.status}`;
+            try {
+                const errorData = JSON.parse(responseText);
+                errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = `HTTP error! status: ${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        showStatus("userStatus", "✅ User created successfully!");
+        document.getElementById("userForm").reset();
+      } catch (error) {
+        showStatus("userStatus", `❌ ${error.message}`, true);
+      }
+    });
+
+    // --- Form Submission Logic (Create Mapping) ---
+    document.getElementById("mappingForm").addEventListener("submit", createUserCompanyMapping);
+
+    // --- Initial Setup ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // No specific action needed here unless pre-loading data
+    });
+  </script>
+</body>
+</html>

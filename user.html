@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    .tab {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .tab button {
+      padding: 10px 15px;
+      cursor: pointer;
+      border: none;
+      background-color: #ddd;
+      border-radius: 3px;
+      transition: background-color 0.2s;
+    }
+    .tab button.active {
+      background-color: #4285f4;
+      color: white;
+    }
+    .tab button:hover {
+      background-color: #ccc;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+      background: white;
+      padding: 20px;
+      border-radius: 5px;
+      margin-top: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      table-layout: fixed;
+      overflow-wrap: break-word;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .status-message {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .status-success {
+      color: green;
+    }
+    .status-error {
+      color: red;
+    }
+    #refreshCompaniesBtn, #refreshViewCompaniesBtn {
+      width: auto;
+      padding: 8px 15px;
+      margin-top: 0;
+      margin-bottom: 15px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    #refreshCompaniesBtn:hover, #refreshViewCompaniesBtn:hover {
+      background-color: #357ae8;
+    }
+    .loading::before {
+      content: '⏳ ';
+    }
+    .error-container {
+      display: none;
+      background: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .error-container button {
+      background: #721c24;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .error-container button:hover {
+      background: #501114;
+    }
+    .update-btn, .cancel-btn {
+      width: auto;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    .update-btn {
+      background-color: #28a745;
+      color: white;
+    }
+    .update-btn:hover {
+      background-color: #218838;
+    }
+    .cancel-btn {
+      background-color: #dc3545;
+      color: white;
+    }
+    .cancel-btn:hover {
+      background-color: #c82333;
+    }
+    td input, td select {
+      width: 100%;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    td textarea {
+      width: 100%;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      box-sizing: border-box;
+      resize: vertical;
+      background: #fff;
+    }
+    td input:disabled {
+      background: #e9ecef;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>User Dashboard</h2>
+
+  <div id="errorContainer" class="error-container">
+    <span id="errorMessage"></span>
+    <button onclick="redirectToLogin()">Go to Login</button>
+  </div>
+
+  <div class="tab">
+    <button class="tab-link active" onclick="showTab(event, 'listCompanies')">List Companies</button>
+    <button class="tab-link" onclick="showTab(event, 'viewCompanies')">View Companies</button>
+  </div>
+
+  <!-- List Companies Tab (Editable) -->
+  <div id="listCompanies" class="tab-content active">
+    <h3>List Companies</h3>
+    <button id="refreshCompaniesBtn" onclick="fetchAndDisplayCompanies()">Refresh List</button>
+    <div id="listStatus" class="status-message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Address</th>
+          <th>Drive</th>
+          <th>Type</th>
+          <th>Follow Up</th>
+          <th>Contacted</th>
+          <th>Contact Details</th>
+          <th>HR Details</th>
+          <th>Remarks</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="companyListBody"></tbody>
+    </table>
+  </div>
+
+  <!-- View Companies Tab (Non-Editable) -->
+  <div id="viewCompanies" class="tab-content">
+    <h3>View Companies</h3>
+    <button id="refreshViewCompaniesBtn" onclick="fetchAndDisplayViewCompanies()">Refresh List</button>
+    <div id="viewStatus" class="status-message"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Address</th>
+          <th>Drive</th>
+          <th>Type</th>
+          <th>Follow Up</th>
+          <th>Contacted</th>
+          <th>Contact Details</th>
+          <th>HR Details</th>
+          <th>Remarks</th>
+        </tr>
+      </thead>
+      <tbody id="viewCompanyListBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Store original company data for reverting changes
+    let originalCompanies = {};
+
+    // --- Helper Function to Decode JWT ---
+    function decodeJWT(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        console.warn("Failed to decode JWT:", e);
+        return null;
+      }
+    }
+
+    // --- Helper Function to Check Token ---
+    function checkToken() {
+      const jwt_token = localStorage.getItem("jwt_token");
+      if (!jwt_token) {
+        showError("No token found. Please log in.");
+        return null;
+      }
+
+      // Check if token is a valid JWT (basic format check)
+      if (!jwt_token.match(/^[\w-]+\.[\w-]+\.[\w-]+$/)) {
+        showError("Invalid token format. Please log in again.");
+        return null;
+      }
+
+      // Check token expiration if it contains an 'exp' claim
+      const decoded = decodeJWT(jwt_token);
+      if (decoded && decoded.exp) {
+        const currentTime = Math.floor(Date.now() / 1000);
+        if (decoded.exp < currentTime) {
+          showError("Your session has expired. Please log in again.");
+          return null;
+        }
+      }
+
+      console.log("Using JWT token:", jwt_token.substring(0, 10) + "...");
+      return jwt_token;
+    }
+
+    // --- Function to Show Error Message ---
+    function showError(message) {
+      const errorContainer = document.getElementById("errorContainer");
+      const errorMessage = document.getElementById("errorMessage");
+      if (errorContainer && errorMessage) {
+        errorMessage.textContent = message;
+        errorContainer.style.display = 'block';
+        // Hide the main content to focus on the error
+        document.getElementById("listCompanies").style.display = 'none';
+        document.getElementById("viewCompanies").style.display = 'none';
+        document.querySelector(".tab").style.display = 'none';
+      } else {
+        alert(message);
+      }
+    }
+
+    // --- Function to Redirect to Login ---
+    function redirectToLogin() {
+      localStorage.removeItem("jwt_token"); // Clear invalid token
+      window.location.href = "index.html";
+    }
+
+    // --- Function to Handle API Errors ---
+    function handleApiError(response, responseText, defaultMessage) {
+      let errorMessage = defaultMessage;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch (parseError) {
+        console.warn("Response was not valid JSON:", parseError);
+      }
+      if (response.status === 401 || response.status === 403) {
+        errorMessage = "Authentication failed: Token may be invalid or expired. Please log in again.";
+        showError(errorMessage);
+      }
+      return errorMessage;
+    }
+
+    // --- Function to Display Status Messages ---
+    function showStatus(elementId, message, isError = false) {
+      const statusEl = document.getElementById(elementId);
+      if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+      } else {
+        console.warn(`Status element with ID ${elementId} not found`);
+      }
+    }
+
+    // --- Tab Switching Logic ---
+    function showTab(event, tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
+      const tabContent = document.getElementById(tabId);
+      if (tabContent) {
+        tabContent.classList.add('active');
+      } else {
+        console.error(`Tab content with ID ${tabId} not found`);
+      }
+      if (event && event.target) {
+        event.target.classList.add('active');
+      } else {
+        const button = document.querySelector(`.tab-link[onclick*="'${tabId}'"]`);
+        if (button) button.classList.add('active');
+      }
+
+      if (tabId === 'listCompanies') {
+        fetchAndDisplayCompanies();
+      } else if (tabId === 'viewCompanies') {
+        fetchAndDisplayViewCompanies();
+      }
+    }
+
+    // --- Revert Row to Original Values (List Companies) ---
+    function revertRow(row, companyId) {
+      const company = originalCompanies[companyId];
+      if (!company) return;
+
+      const cells = row.cells;
+      cells[0].querySelector('input').value = company.CompanyID ?? '';
+      cells[1].querySelector('input').value = company.CompanyName ?? '';
+      cells[2].querySelector('input').value = company.CompanyAddress ?? '';
+      cells[3].querySelector('input').value = company.Drive ?? '';
+      cells[4].querySelector('input').value = company.TypeOfDrive ?? '';
+      cells[5].querySelector('input').value = company.FollowUp ?? '';
+      cells[6].querySelector('select').value = company.IsContacted ? 'true' : 'false';
+      cells[7].querySelector('input').value = company.ContactDetails ?? '';
+      cells[8].querySelector('input').value = company.HRDetails ?? '';
+      cells[9].querySelector('textarea').value = company.Remarks ?? '';
+    }
+
+    // --- Save Updated Company Data (List Companies) ---
+    async function saveCompanyUpdates(row, companyId) {
+      const token = checkToken();
+      if (!token) return;
+
+      const cells = row.cells;
+      const payload = {
+        jwt_token: token,
+        companyID: companyId,
+        companyName: cells[1].querySelector('input').value.trim(),
+        companyAddress: cells[2].querySelector('input').value.trim(),
+        drive: cells[3].querySelector('input').value.trim(),
+        typeOfDrive: cells[4].querySelector('input').value.trim(),
+        followUp: cells[5].querySelector('input').value.trim(),
+        isContacted: cells[6].querySelector('select').value === 'true',
+        contactDetails: cells[7].querySelector('input').value.trim(),
+        hrDetails: cells[8].querySelector('input').value.trim(),
+        remarks: cells[9].querySelector('textarea').value.trim()
+      };
+
+      // Basic validation
+      if (!payload.companyName || !payload.companyAddress || !payload.drive || !payload.typeOfDrive || !payload.followUp || !payload.contactDetails || !payload.hrDetails) {
+        showStatus("listStatus", "All fields are required.", true);
+        return;
+      }
+
+      const apiEndpoint = `http://localhost:8080/v1/data/id/${companyId}`;
+      const requestOptions = {
+        method: "PUT",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      };
+
+      try {
+        const response = await fetch(apiEndpoint, requestOptions);
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to update company ${companyId}. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        // Update original data to reflect successful update
+        originalCompanies[companyId] = { ...payload, CompanyID: companyId };
+        showStatus("listStatus", `Company ${companyId} updated successfully!`);
+
+      } catch (error) {
+        console.error("Error in saveCompanyUpdates:", error);
+        showStatus("listStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    // --- Fetch and Display Companies Logic (List Companies - Editable) ---
+    async function fetchAndDisplayCompanies() {
+      const token = checkToken();
+      if (!token) return;
+
+      const listStatus = document.getElementById("listStatus");
+      const tableBody = document.getElementById("companyListBody");
+      if (!listStatus || !tableBody) {
+        console.error("Required DOM elements for companies list not found");
+        return;
+      }
+      listStatus.textContent = "Loading companies...";
+      listStatus.className = 'status-message loading';
+      tableBody.innerHTML = '';
+
+      const apiEndpoint = "http://localhost:8080/v1/data/user/id";
+      const payload = {
+        jwt_token: token
+      };
+      const requestOptions = {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      };
+
+      try {
+        const response = await fetch(apiEndpoint, requestOptions);
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to fetch companies. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error("Failed to parse JSON response from server");
+        }
+
+        if (!data || !Array.isArray(data.companies)) {
+          throw new Error("Invalid data format received from server. Expected { companies: [...] }");
+        }
+
+        if (data.companies.length === 0) {
+          listStatus.textContent = "No companies found.";
+          listStatus.className = 'status-message';
+          return;
+        }
+
+        data.companies.forEach(company => {
+          // Store original data for reverting
+          originalCompanies[company.CompanyID] = { ...company };
+
+          const row = tableBody.insertRow();
+          row.insertCell().innerHTML = `<input type="text" value="${company.CompanyID ?? ''}" disabled>`;
+          row.insertCell().innerHTML = `<input type="text" value="${company.CompanyName ?? ''}" data-field="companyName">`;
+          row.insertCell().innerHTML = `<input type="text" value="${company.CompanyAddress ?? ''}" data-field="companyAddress">`;
+          row.insertCell().innerHTML = `<input type="text" value="${company.Drive ?? ''}" data-field="drive">`;
+          row.insertCell().innerHTML = `<input type="text" value="${company.TypeOfDrive ?? ''}" data-field="typeOfDrive">`;
+          row.insertCell().innerHTML = `<input type="text" value="${company.FollowUp ?? ''}" data-field="followUp">`;
+          row.insertCell().innerHTML = `<select data-field="isContacted"><option value="true" ${company.IsContacted ? 'selected' : ''}>Yes</option><option value="false" ${!company.IsContacted ? 'selected' : ''}>No</option></select>`;
+          row.insertCell().innerHTML = `<input type="text" value="${company.ContactDetails ?? ''}" data-field="contactDetails">`;
+          row.insertCell().innerHTML = `<input type="text" value="${company.HRDetails ?? ''}" data-field="hrDetails">`;
+          row.insertCell().innerHTML = `<textarea data-field="remarks">${company.Remarks ?? ''}</textarea>`;
+          const actionCell = row.insertCell();
+          actionCell.innerHTML = `
+            <button class="update-btn" onclick="saveCompanyUpdates(this.parentNode.parentNode, '${company.CompanyID}')">Update</button>
+            <button class="cancel-btn" onclick="revertRow(this.parentNode.parentNode, '${company.CompanyID}')">Cancel</button>
+          `;
+        });
+
+        showStatus("listStatus", `Loaded ${data.companies.length} companies.`);
+
+      } catch (error) {
+        console.error("Error in fetchAndDisplayCompanies:", error);
+        showStatus("listStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    // --- Fetch and Display Companies Logic (View Companies - Non-Editable) ---
+    async function fetchAndDisplayViewCompanies() {
+      const token = checkToken();
+      if (!token) return;
+
+      const viewStatus = document.getElementById("viewStatus");
+      const tableBody = document.getElementById("viewCompanyListBody");
+      if (!viewStatus || !tableBody) {
+        console.error("Required DOM elements for view companies list not found");
+        return;
+      }
+      viewStatus.textContent = "Loading companies...";
+      viewStatus.className = 'status-message loading';
+      tableBody.innerHTML = '';
+
+      const apiEndpoint = "http://localhost:8080/v1/data/user/id";
+      const payload = {
+        jwt_token: token
+      };
+      const requestOptions = {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      };
+
+      try {
+        const response = await fetch(apiEndpoint, requestOptions);
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          const errorMessage = handleApiError(response, responseText, `Failed to fetch companies. Status: ${response.status}`);
+          throw new Error(errorMessage);
+        }
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error("Failed to parse JSON response from server");
+        }
+
+        if (!data || !Array.isArray(data.companies)) {
+          throw new Error("Invalid data format received from server. Expected { companies: [...] }");
+        }
+
+        if (data.companies.length === 0) {
+          viewStatus.textContent = "No companies found.";
+          viewStatus.className = 'status-message';
+          return;
+        }
+
+        data.companies.forEach(company => {
+          const row = tableBody.insertRow();
+          row.insertCell().textContent = company.CompanyID ?? 'N/A';
+          row.insertCell().textContent = company.CompanyName ?? 'N/A';
+          row.insertCell().textContent = company.CompanyAddress ?? 'N/A';
+          row.insertCell().textContent = company.Drive ?? 'N/A';
+          row.insertCell().textContent = company.TypeOfDrive ?? 'N/A';
+          row.insertCell().textContent = company.FollowUp ?? 'N/A';
+          row.insertCell().textContent = typeof company.IsContacted === 'boolean' ? (company.IsContacted ? 'Yes' : 'No') : 'N/A';
+          row.insertCell().textContent = company.ContactDetails ?? 'N/A';
+          row.insertCell().textContent = company.HRDetails ?? 'N/A';
+          row.insertCell().textContent = company.Remarks ?? 'N/A';
+        });
+
+        showStatus("viewStatus", `Loaded ${data.companies.length} companies.`);
+
+      } catch (error) {
+        console.error("Error in fetchAndDisplayViewCompanies:", error);
+        showStatus("viewStatus", `Error: ${error.message}`, true);
+      }
+    }
+
+    // --- Initial Setup ---
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check token on page load
+      const token = checkToken();
+      if (token) {
+        showTab(null, 'listCompanies');
+      }
+    });
+  </script>
+</body>
+</html>
